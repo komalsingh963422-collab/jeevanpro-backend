@@ -1,0 +1,31 @@
+const express = require("express");
+const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+
+const app = express();
+const PORT = 8080;
+
+async function startSock() {
+  const { state, saveCreds } = await useMultiFileAuthState("auth_info");
+  const sock = makeWASocket({
+    auth: state,
+  });
+
+  sock.ev.on("creds.update", saveCreds);
+
+  sock.ev.on("messages.upsert", async ({ messages }) => {
+    const msg = messages[0];
+    if (!msg.key.fromMe && msg.message) {
+      await sock.sendMessage(msg.key.remoteJid, { text: "Hello from Randhawa WhatsApp API 🚀" });
+    }
+  });
+}
+
+startSock();
+
+app.get("/", (req, res) => {
+  res.send("WhatsApp API Server Running 🚀");
+});
+
+app.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
